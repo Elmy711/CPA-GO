@@ -18,24 +18,26 @@ import (
 
 // Warna untuk output
 const (
-	RED    = "\033[91m"
-	GREEN  = "\033[92m"
-	CYAN   = "\033[96m"
-	YELLOW = "\033[93m"
+	RED     = "\033[91m"
+	GREEN   = "\033[92m"
+	CYAN    = "\033[96m"
+	YELLOW  = "\033[93m"
 	MAGENTA = "\033[95m"
-	RESET  = "\033[0m"
+	WHITE   = "\033[97m"
+	BOLD    = "\033[1m"
+	RESET   = "\033[0m"
 )
 
-// Banner CYBER PEOPLE ATTACK
+// Banner CPA - 3 huruf dengan desain keren
 const banner = `
-   ███████╗   ██████╗      █████╗ 
-  ██ ╔════╝   ██╔══██╗   ██╔══██╗
-  ██ ║            ██████ ╔╝  ███████║
-  ██ ║            ██╔═══╝     ██╔══██║
- ╚██████╗     ██║            ██║    ██║
-   ╚═════╝     ╚═╝            ╚═╝    ╚═╝
-                                
-     CYBER PEOPLE ATTACK - CPA TOOL
+%s%s
+   ██████╗ ██████╗  █████╗ 
+  ██╔════╝██╔══██╗██╔══██╗
+  ██║     ██████╔╝███████║
+  ██║     ██╔═══╝ ██╔══██║
+  ╚██████╗██║     ██║  ██║
+   ╚═════╝╚═╝     ╚═╝  ╚═╝
+     CYBER PEOPLE ATTACK%s
 `
 
 var (
@@ -45,17 +47,17 @@ var (
 )
 
 type AttackConfig struct {
-	TargetURL    string
-	Method       string
-	Threads      int
-	Duration     int
-	NumRequests  int
-	Timeout      int
-	Insecure     bool
-	NoColor      bool
-	Silent       bool
-	DelayMin     int
-	DelayMax     int
+	TargetURL     string
+	Method        string
+	Threads       int
+	Duration      int
+	NumRequests   int
+	Timeout       int
+	Insecure      bool
+	NoColor       bool
+	Silent        bool
+	DelayMin      int
+	DelayMax      int
 	CustomPayload string
 	PayloadFile   string
 	RandomPayload bool
@@ -83,6 +85,8 @@ var defaultPayloads = []string{
 	"{\"id\":\"1\"}",
 	"{\"username\":\"admin\",\"password\":\"admin\"}",
 	"{\"search\":\"' OR '1'='1\"}",
+	"{\"username\":\"admin' OR '1'='1\",\"password\":\"any\"}",
+	"{\"query\":\"<script>alert('XSS')</script>\"}",
 }
 
 func createHTTPClient(timeout int, insecure bool, proxyURL string) *http.Client {
@@ -273,11 +277,11 @@ func printStats(stopStats chan struct{}, noColor, silent bool) {
 
 func runAttack(config *AttackConfig) {
 	if !config.NoColor && !config.Silent {
-		fmt.Print(banner)
+		fmt.Printf(banner, BOLD, CYAN, RESET)
 	}
 
 	if !config.Silent {
-		fmt.Printf("%s⚠️  CPA - CYBER PEOPLE ATTACK STARTED ⚠️%s\n", RED, RESET)
+		fmt.Printf("%s⚠️  CPA ATTACK STARTED ⚠️%s\n", RED, RESET)
 		fmt.Printf("   Target       : %s\n", config.TargetURL)
 		fmt.Printf("   Method       : %s\n", strings.ToUpper(config.Method))
 		fmt.Printf("   Threads      : %d\n", config.Threads)
@@ -356,7 +360,7 @@ func runAttack(config *AttackConfig) {
 		}
 	} else {
 		if !config.Silent {
-			fmt.Printf("%s♾️  Running until Ctrl+C.%s\n", MAGENTA, RESET)
+			fmt.Printf("%s♾️  Running until Ctrl+C.%s\n", CYAN, RESET)
 		}
 		<-sigChan
 		if !config.Silent {
@@ -380,7 +384,7 @@ stop:
 	if failed < 0 {
 		failed = 0
 	}
-	
+
 	success := sent - failed
 	if success < 0 {
 		success = 0
@@ -397,7 +401,7 @@ stop:
 	}
 
 	if !config.Silent {
-		fmt.Printf("\n%s========== CPA FINAL REPORT ==========%s\n", MAGENTA, RESET)
+		fmt.Printf("\n%s========== CPA FINAL REPORT ==========%s\n", CYAN, RESET)
 		fmt.Printf("   Method       : %s\n", strings.ToUpper(config.Method))
 		fmt.Printf("   Target       : %s\n", config.TargetURL)
 		fmt.Printf("   Duration     : %.2f seconds\n", elapsed)
@@ -412,7 +416,7 @@ stop:
 		if config.CustomPayload != "" {
 			fmt.Printf("   Custom Payload: %s\n", config.CustomPayload)
 		}
-		fmt.Printf("%s========================================%s\n\n", MAGENTA, RESET)
+		fmt.Printf("%s========================================%s\n\n", CYAN, RESET)
 	} else {
 		fmt.Printf("CPA finished: %d requests, %d success, %.2f%% success rate, %.2f RPS\n", sent, success, successRate, rps)
 	}
@@ -420,7 +424,7 @@ stop:
 
 func showMethods() {
 	fmt.Printf(`
-%s🔥 CYBER PEOPLE ATTACK (CPA) - AVAILABLE METHODS 🔥%s
+%s🔥 CPA - AVAILABLE METHODS 🔥%s
 
    %sGET METHODS:%s
    ├── https      - Standard HTTPS GET request
@@ -453,9 +457,12 @@ func showMethods() {
    # JSON attack
    ./cpa -target https://api.example.com -method json -payload '{"key":"value"}' -threads 100
 
-`, GREEN, RESET,
-		CYAN, RESET, YELLOW, RESET,
-		YELLOW, RESET)
+%s⚠️  WARNING: Use only on authorized targets! %s
+
+`, CYAN, RESET,
+		GREEN, RESET, YELLOW, RESET,
+		YELLOW, RESET,
+		RED, RESET)
 }
 
 func main() {
@@ -487,7 +494,7 @@ func main() {
 	}
 
 	if *showHelp || *target == "" {
-		fmt.Printf("%s🔥 CPA - CYBER PEOPLE ATTACK Tool %s\n", MAGENTA, RESET)
+		fmt.Printf("%s🔥 CPA - Cyber People Attack Tool %s\n", CYAN, RESET)
 		fmt.Printf("Usage: %s [options]\n\n", os.Args[0])
 		flag.PrintDefaults()
 		showMethods()
