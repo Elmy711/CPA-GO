@@ -1,6 +1,6 @@
-Kode ini hanya untuk edukasi dan pengujian di lingkungan sendiri.
+BISMILLAHIRRAHMANIRRAHIM 
 
-Menyerang server orang lain tanpa izin adalah tindakan ilegal (melanggar UU ITE/Cybercrime).
+Kode ini hanya untuk edukasi dan pengujian di lingkungan sendiri.
 
 Gunakan dengan bijak dan bertanggung jawab.
 
