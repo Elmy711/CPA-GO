@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"math/rand"
 	"net/http"
-	"net/url"
 	"os"
 	"os/signal"
 	"sync"
@@ -96,7 +95,7 @@ func sendRequest(client *http.Client, targetURL, methodType string) (int, error)
 	case "bypass":
 		req, err = http.NewRequest("GET", targetURL+"/bypass", nil)
 	case "uam":
-		req, err =http.NewRequest("GET", targetURL+"/uam", nil)
+		req, err = http.NewRequest("GET", targetURL+"/uam", nil)
 	case "tls":
 		req, err = http.NewRequest("GET", targetURL, nil)
 	case "r2":
