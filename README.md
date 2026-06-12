@@ -10,7 +10,7 @@ go build -o cpa cpa.go
 # Lihat help
 ./cpa -help
 
-# Compile dulu
+# Compile
 go build -o cpa cpa.go
 
 # Delay random antara 100-500ms per request
